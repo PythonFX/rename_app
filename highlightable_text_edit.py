@@ -23,8 +23,7 @@ class HighlightableTextEdit(QWidget):
             cursor.insertText(line)
             print(index, line)
             remaining_line = line
-            last_offset = 0
-            while search_text in remaining_line:
+            if search_text in remaining_line:
                 start_index = line.find(search_text)
                 end_index = start_index + len(search_text)
                 cursor.movePosition(QTextCursor.StartOfLine)
