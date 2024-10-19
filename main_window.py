@@ -1,8 +1,9 @@
 import sys, os
-from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QPushButton
+from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QPushButton, QSpinBox
 from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QListWidget, QFileDialog, QDialog
 from PyQt5.QtWidgets import QRadioButton, QLineEdit, QGroupBox, QCheckBox
 from PyQt5.QtCore import QSettings
+from PyQt5.QtCore import Qt
 from drag_drop_widget import DragDropWidget
 from rule_dialog import RuleDialog
 
@@ -47,11 +48,30 @@ class MainWindow(QMainWindow):
         radioLayout.addWidget(self.deleteRadioButton)
         radioLayout.addWidget(self.replaceRadioButton)
 
+        # Position layout
+        positionLayout = QHBoxLayout()
+        self.positionLabel = QLabel("Position:")
+        self.positionSpin = QSpinBox()
+        self.positionSpin.setRange(1, 10)
+        self.positionSpin.setFixedWidth(60)
+        positionLayout.addWidget(self.positionLabel)
+        positionLayout.addStretch()
+        positionLayout.addWidget(self.positionSpin)
+
         # Input fields
+        input_layout = QHBoxLayout()
+        self.inputNameDisplay = QLabel("查找")
         self.inputNameTextField = QLineEdit()
         self.inputNameTextField.textChanged.connect(self.onRuleChanged)
+        input_layout.addWidget(self.inputNameDisplay)
+        input_layout.addWidget(self.inputNameTextField)
+
+        output_layout = QHBoxLayout()
+        self.outputNameDisplay = QLabel("替换为")
         self.outputNameTextField = QLineEdit()
         self.outputNameTextField.textChanged.connect(self.onRuleChanged)
+        output_layout.addWidget(self.outputNameDisplay)
+        output_layout.addWidget(self.outputNameTextField)
 
         # Connect radio buttons to slot to enable/disable second input field
         self.addRadioButton.toggled.connect(self.onRuleChanged)
@@ -69,10 +89,13 @@ class MainWindow(QMainWindow):
 
         # Add the radio layout and input fields to the rules layout
         rulesLayout.addLayout(radioLayout)  # Add radio buttons in a horizontal layout
-        rulesLayout.addWidget(self.inputNameTextField)
-        rulesLayout.addWidget(self.outputNameTextField)
+        rulesLayout.addLayout(positionLayout)
+        rulesLayout.addLayout(input_layout)
+        rulesLayout.addLayout(output_layout)
+        rulesLayout.addStretch()
         rulesLayout.addWidget(self.videoPriorityCheckBox)
         rulesLayout.addWidget(self.confirmButton)
+        # rulesLayout.setAlignment(Qt.AlignTop)  # Align the layout to the top
         self.ruleGroupBox.setLayout(rulesLayout)
         middleLayout.addWidget(self.ruleGroupBox)
 
@@ -92,12 +115,25 @@ class MainWindow(QMainWindow):
         main_layout.addWidget(self.dragDropWidget)
         centralWidget.setLayout(main_layout)
 
+        self.onRuleChanged()
+
+    def updateLabels(self, is_visible, input_text, output_text=''):
+        self.outputNameDisplay.setVisible(is_visible)
+        self.outputNameTextField.setVisible(is_visible)
+        self.inputNameDisplay.setText(input_text)
+        self.outputNameDisplay.setText(output_text)
+
     def onRuleChanged(self):
         # Enable the second input field only for 'replace' mode
         # add content
         # remove content
         # replace content
-        if self.replaceRadioButton.isChecked():
+        if self.addRadioButton.isChecked():
+            self.updateLabels(False, '添加内容:')
+        elif self.deleteRadioButton.isChecked():
+            self.updateLabels(False, '删除内容:')
+        elif self.replaceRadioButton.isChecked():
+            self.updateLabels(True, '查找：', '替换为：')
             # get the content of the textFromInput InputField
             textFromInput = self.inputNameTextField.text()
             textFromOutput = self.outputNameTextField.text()
