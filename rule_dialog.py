@@ -1,13 +1,11 @@
 import sys, os
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QPushButton
 from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QListWidget, QFileDialog, QDialog
-from PyQt5.QtWidgets import QRadioButton, QLineEdit, QGroupBox, QCheckBox
-from PyQt5.QtCore import QSettings
-from PyQt5.QtCore import Qt
+from highlightable_text_edit import HighlightableTextEdit
 
 
 class RuleDialog(QDialog):
-    def __init__(self, sourceListWidget, targetListWidget):
+    def __init__(self, sourceListWidget: HighlightableTextEdit, targetListWidget):
         super().__init__()
         self.sourceListWidget = sourceListWidget
         self.targetListWidget = targetListWidget
@@ -40,7 +38,7 @@ class RuleDialog(QDialog):
             return
 
         for i in range(min(self.sourceListWidget.count(), len(self.selectedFiles))):
-            originalFilePath = self.sourceListWidget.item(i).text()
+            originalFilePath = self.sourceListWidget.text_at(i)
             newFileName = self.selectedFiles[i].split('/')[-1]
             # Extract original file extension
             originalFileExtension = originalFilePath.split('.')[-1] if '.' in originalFilePath else ''

@@ -14,7 +14,20 @@ class HighlightableTextEdit(QWidget):
         self.cursor = QTextCursor(self.text_edit.document())
         self.original_format = self.cursor.charFormat()
 
-    def display_lines(self):
+    def count(self):
+        return len(self.lines)
+
+    def text_at(self, index):
+        if index < 0 or index >= len(self.lines):
+            return None
+        return self.lines[index]
+
+    def set_size(self, width, height):
+        self.text_edit.setFixedSize(width, height)
+
+    def display_lines(self, lines=None):
+        if lines:
+            self.lines = lines
         self.text_edit.clear()
         self.cursor.setCharFormat(self.original_format)
         for line in self.lines:

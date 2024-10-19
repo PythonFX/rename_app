@@ -1,18 +1,19 @@
 import sys, os
-from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QPushButton, QSpinBox
+from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QPushButton, QSpinBox, QSizePolicy
 from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QListWidget, QFileDialog, QDialog
 from PyQt5.QtWidgets import QRadioButton, QLineEdit, QGroupBox, QCheckBox
 from PyQt5.QtCore import QSettings
 from PyQt5.QtCore import Qt
 from drag_drop_widget import DragDropWidget
 from rule_dialog import RuleDialog
+from highlightable_text_edit import HighlightableTextEdit
 
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Batch File Renamer")
-        self.setGeometry(100, 100, 1280, 800)
+        self.setGeometry(100, 100, 1280, 600)
         self.currentFolderPath = ''
         self.files = []
         self.initUI()
@@ -24,19 +25,26 @@ class MainWindow(QMainWindow):
         main_layout = QHBoxLayout()
 
         # Left section
-        leftLayout = QVBoxLayout()
+        leftSection = QWidget()
+        leftLayout = QVBoxLayout(leftSection)
         openButton = QPushButton("Open Files")
         openButton.clicked.connect(self.openFileDialog)
-        self.fileListWidget = QListWidget()
+        self.sourceListWidget = HighlightableTextEdit()
+        # self.sourceListWidget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.sourceListWidget.set_size(400, 550)
         leftLayout.addWidget(openButton)
-        leftLayout.addWidget(self.fileListWidget)
+        leftLayout.addWidget(self.sourceListWidget)
+        leftSection.setFixedSize(400, 600)
 
         # Middle section: renaming rules
-        middleLayout = QVBoxLayout()
+        middleSection = QWidget()
+        middleLayout = QVBoxLayout(middleSection)
+        middleSection.setFixedSize(400, 600)
         self.ruleGroupBox = QGroupBox("Renaming Rules")
         rulesLayout = QVBoxLayout()
 
         # Horizontal layout for radio buttons
+
         radioLayout = QHBoxLayout()
         self.addRadioButton = QRadioButton("Add")
         self.deleteRadioButton = QRadioButton("Delete")
@@ -63,6 +71,7 @@ class MainWindow(QMainWindow):
         self.inputNameDisplay = QLabel("查找")
         self.inputNameTextField = QLineEdit()
         self.inputNameTextField.textChanged.connect(self.onRuleChanged)
+        self.inputNameTextField.textChanged.connect(lambda text: self.sourceListWidget.update_highlight(text))
         input_layout.addWidget(self.inputNameDisplay)
         input_layout.addWidget(self.inputNameTextField)
 
@@ -100,17 +109,19 @@ class MainWindow(QMainWindow):
         middleLayout.addWidget(self.ruleGroupBox)
 
         # Right section
-        rightLayout = QVBoxLayout()
+        rightSection = QWidget()
+        rightLayout = QVBoxLayout(rightSection)
         ruleButton = QPushButton("Rule")
         ruleButton.clicked.connect(self.openRuleDialog)
         self.targetListWidget = QListWidget()
         rightLayout.addWidget(ruleButton)
         rightLayout.addWidget(self.targetListWidget)
+        rightSection.setFixedSize(400, 600)
 
         # combine layouts
-        main_layout.addLayout(leftLayout)
-        main_layout.addLayout(middleLayout)
-        main_layout.addLayout(rightLayout)
+        main_layout.addWidget(leftSection)
+        main_layout.addWidget(middleSection)
+        main_layout.addWidget(rightSection)
         self.dragDropWidget = DragDropWidget()
         main_layout.addWidget(self.dragDropWidget)
         centralWidget.setLayout(main_layout)
@@ -156,10 +167,11 @@ class MainWindow(QMainWindow):
         if self.files:
             self.currentFolderPath = defaultDir
             print(self.currentFolderPath)
-            self.fileListWidget.clear()
+            filenames = []
             for file in self.files:
                 filename = file.split('/')[-1]  # Extract the filename from the path
-                self.fileListWidget.addItem(filename)
+                filenames.append(filename)
+            self.sourceListWidget.display_lines(filenames)
             # For demonstration, use the filenames in the target list as well
             self.targetListWidget.clear()  # Clear the list before adding new items
             self.targetListWidget.addItems([file.split('/')[-1] for file in self.files])
@@ -169,16 +181,16 @@ class MainWindow(QMainWindow):
 
     def openRuleDialog(self):
         # Pass fileListWidget and targetListWidget to the dialog
-        self.ruleDialog = RuleDialog(self.fileListWidget, self.targetListWidget)
+        self.ruleDialog = RuleDialog(self.sourceListWidget, self.targetListWidget)
         self.ruleDialog.exec_()
 
     def confirmRenaming(self):
-        if self.fileListWidget.count() != self.targetListWidget.count():
+        if self.sourceListWidget.count() != self.targetListWidget.count():
             print("The number of original files and target filenames does not match.")
             return
 
-        for i in range(self.fileListWidget.count()):
-            originalFilePath = os.path.join(self.currentFolderPath, self.fileListWidget.item(i).text())
+        for i in range(self.sourceListWidget.count()):
+            originalFilePath = os.path.join(self.currentFolderPath, self.sourceListWidget.item(i).text())
             newFilePath = os.path.join(self.currentFolderPath, self.targetListWidget.item(i).text())
             try:
                 os.rename(originalFilePath, newFilePath)
